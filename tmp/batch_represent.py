@@ -127,6 +127,7 @@ def main(args):
 
 			print("Finally saving embeddings and gallery to: %s" % (output_dir))
 			# save the gallery and embeddings (signatures) as numpy arrays to disk
+			np.save(os.path.join(output_dir, "labels.npy"), labels_array)
 			np.save(os.path.join(output_dir, "paths.npy"), paths)
 			np.save(os.path.join(output_dir, "signatures.npy"), emb_array)
 
