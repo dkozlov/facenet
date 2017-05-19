@@ -246,9 +246,11 @@ def flip(image, random_flip):
     return image
 
 def to_rgb(img):
-    w, h = img.shape
-    ret = np.empty((w, h, 3), dtype=np.uint8)
-    ret[:, :, 0] = ret[:, :, 1] = ret[:, :, 2] = img
+    ret = np.empty((img.shape[0], img.shape[1], 3), dtype=np.uint8)
+    if img.ndim == 3:
+        ret[:, :, 0] = ret[:, :, 1] = ret[:, :, 2] = img[:,:,1]
+    else:
+        ret[:, :, 0] = ret[:, :, 1] = ret[:, :, 2] = img
     return ret
   
 def load_data(image_paths, do_random_crop, do_random_flip, image_size, do_prewhiten=True):

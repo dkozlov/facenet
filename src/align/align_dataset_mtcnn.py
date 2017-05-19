@@ -89,32 +89,36 @@ def main(args):
                             print('Unable to align "%s"' % image_path)
                             text_file.write('%s\n' % (output_filename))
                             continue
-                        if img.ndim == 2:
+                        if img.ndim == 2 or img.shape[2] < 3:
                             img = facenet.to_rgb(img)
                         img = img[:,:,0:3]
-    
-                        bounding_boxes, _ = align.detect_face.detect_face(img, minsize, pnet, rnet, onet, threshold, factor)
+                        maxSize = 2000
+                        if img.shape[0] > maxSize:
+                            img = misc.imresize(img, (maxSize, int((maxSize * img.shape[1]) / img.shape[0])), interp='bilinear')
+                            print('Image has been resized to the new shape: ', img.shape)
+                        if img.shape[1] > maxSize:
+                            img = misc.imresize(img, (int((maxSize * img.shape[0]) / img.shape[1]), maxSize), interp='bilinear')
+                            print('Image has been resized to the new shape: ', img.shape)
+
+                        bounding_boxes, points = align.detect_face.detect_face(img, minsize, pnet, rnet, onet, threshold, factor)
                         nrof_faces = bounding_boxes.shape[0]
                         if nrof_faces>0:
-                            det = bounding_boxes[:,0:4]
+                            index = 0
+                            filename_split = os.path.splitext(output_filename)
                             img_size = np.asarray(img.shape)[0:2]
-                            if nrof_faces>1:
-                                bounding_box_size = (det[:,2]-det[:,0])*(det[:,3]-det[:,1])
-                                img_center = img_size / 2
-                                offsets = np.vstack([ (det[:,0]+det[:,2])/2-img_center[1], (det[:,1]+det[:,3])/2-img_center[0] ])
-                                offset_dist_squared = np.sum(np.power(offsets,2.0),0)
-                                index = np.argmax(bounding_box_size-offset_dist_squared*2.0) # some extra weight on the centering
-                                det = det[index,:]
-                            det = np.squeeze(det)
-                            bb = np.zeros(4, dtype=np.int32)
-                            bb[0] = np.maximum(det[0]-args.margin/2, 0)
-                            bb[1] = np.maximum(det[1]-args.margin/2, 0)
-                            bb[2] = np.minimum(det[2]+args.margin/2, img_size[1])
-                            bb[3] = np.minimum(det[3]+args.margin/2, img_size[0])
-                            cropped = img[bb[1]:bb[3],bb[0]:bb[2],:]
-                            scaled = misc.imresize(cropped, (args.image_size, args.image_size), interp='bilinear')
+                            for i in range(nrof_faces):
+                                 det = bounding_boxes[i, 0:4]
+                                 det = np.squeeze(det)
+                                 bb = np.zeros(4, dtype=np.int32)
+                                 bb[0] = np.maximum(det[0]-args.margin/2, 0)
+                                 bb[1] = np.maximum(det[1]-args.margin/2, 0)
+                                 bb[2] = np.minimum(det[2]+args.margin/2, img_size[1])
+                                 bb[3] = np.minimum(det[3]+args.margin/2, img_size[0])
+                                 cropped = img[bb[1]:bb[3],bb[0]:bb[2],:]
+                                 scaled = misc.imresize(cropped, (args.image_size, args.image_size), interp='bilinear')
+                                 output_filename = filename_split[0] + '_'  + str(i) + filename_split[1]
+                                 misc.imsave(output_filename, scaled)
                             nrof_successfully_aligned += 1
-                            misc.imsave(output_filename, scaled)
                             text_file.write('%s %d %d %d %d\n' % (output_filename, bb[0], bb[1], bb[2], bb[3]))
                         else:
                             print('Unable to align "%s"' % image_path)
