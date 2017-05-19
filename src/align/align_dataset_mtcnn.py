@@ -126,6 +126,7 @@ def main(args):
                             
     print('Total number of images: %d' % nrof_images_total)
     print('Number of successfully aligned images: %d' % nrof_successfully_aligned)
+    return nrof_successfully_aligned
             
 
 def parse_arguments(argv):
